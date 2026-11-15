@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Змейка</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #eee;
+            user-select: none;
+        }
+        #game-container {
+            text-align: center;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        canvas {
+            background-color: #000;
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #555;
+        }
+        #score {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Счёт: 0</div>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <button id="restartBtn" style="display: none;">Играть снова</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDiv = document.getElementById('score');
+        const restartBtn = document.getElementById('restartBtn');
+
+        const gridSize = 20;
+        let canvasWidth = canvas.width;
+        let canvasHeight = canvas.height;
+
+        let snake;
+        let food;
+        let dx, dy;
+        let score;
+        let gameInterval;
+        let baseSpeed = 100;
+
+        function startGame() {
+            snake = [{x: 10, y: 10}];
+            score = 0;
+            dx = 1;
+            dy = 0;
+            scoreDiv.textContent = 'Счёт: ' + score;
+            placeFood();
+            restartBtn.style.display = 'none';
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, baseSpeed);
+        }
+
+        function placeFood() {
+            food = {
+                x: Math.floor(Math.random() * (canvasWidth / gridSize)),
+                y: Math.floor(Math.random() * (canvasHeight / gridSize))
+            };
+            if (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+                placeFood();
+            }
+        }
+
+        function gameLoop() {
+            moveSnake();
+            if (checkCollision()) {
+                clearInterval(gameInterval);
+                restartBtn.style.display = 'block';
+                return;
+            }
+            checkFood();
+            clearCanvas();
+            drawFood();
+            drawSnake();
+        }
+
+        function moveSnake() {
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+            if (head.x !== food.x || head.y !== food.y) {
+                snake.pop();
+            }
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+            if (head.x < 0 || head.x >= canvasWidth / gridSize || head.y < 0 || head.y >= canvasHeight / gridSize) {
+                return true;
+            }
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkFood() {
+            const head = snake[0];
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreDiv.textContent = 'Счёт: ' + score;
+                placeFood();
+                clearInterval(gameInterval);
+                const newSpeed = Math.max(60, baseSpeed - score * 3);
+                gameInterval = setInterval(gameLoop, newSpeed);
+            }
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        function drawSnake() {
+            ctx.fillStyle = '#00FF00';
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 1, gridSize - 1);
+        }
+
+        function changeDirection(e) {
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+
+            const keyPressed = e.keyCode;
+            const goingUp = dy === -1;
+            const goingDown = dy === 1;
+            const goingLeft = dx === -1;
+            const goingRight = dx === 1;
+
+            if (keyPressed === LEFT_KEY && !goingRight) {
+                dx = -1;
+                dy = 0;
+            }
+            if (keyPressed === UP_KEY && !goingDown) {
+                dx = 0;
+                dy = -1;
+            }
+            if (keyPressed === RIGHT_KEY && !goingLeft) {
+                dx = 1;
+                dy = 0;
+            }
+            if (keyPressed === DOWN_KEY && !goingUp) {
+                dx = 0;
+                dy = 1;
+            }
+        }
+
+        function handleResize() {
+            const scale = Math.min(window.innerWidth * 0.9 / canvasWidth, window.innerHeight * 0.7 / canvasHeight);
+            const newWidth = canvasWidth * scale;
+            const newHeight = canvasHeight * scale;
+            canvas.style.width = newWidth + 'px';
+            canvas.style.height = newHeight + 'px';
+        }
+
+        document.addEventListener('keydown', changeDirection);
+        restartBtn.addEventListener('click', startGame);
+        window.addEventListener('resize', handleResize);
+
+        startGame();
+        handleResize();
+    </script>
+</body>
+</html>
