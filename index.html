@@ -2,36 +2,38 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Змейка</title>
+    <title>Змейка 2.0</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #222;
+            background-color: #f0f0f0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             font-family: 'Courier New', monospace;
-            color: #eee;
+            color: #333;
             user-select: none;
         }
         #game-container {
             text-align: center;
-            background-color: #333;
+            background-color: #fff;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
         }
         canvas {
-            background-color: #000;
+            background-color: #ddd;
             display: block;
             margin: 0 auto;
-            border: 2px solid #555;
+            border: 2px solid #aaa;
         }
         #score {
             margin-bottom: 10px;
             font-size: 1.2em;
+            font-weight: bold;
         }
         button {
             padding: 10px 20px;
@@ -73,7 +75,12 @@
         let baseSpeed = 100;
 
         function startGame() {
-            snake = [{x: 10, y: 10}];
+            // Змейка из 3 сегментов, направлена вправо
+            snake = [
+                {x: 8, y: 10}, 
+                {x: 9, y: 10}, 
+                {x: 10, y: 10}
+            ];
             score = 0;
             dx = 1;
             dy = 0;
@@ -141,20 +148,52 @@
         }
 
         function clearCanvas() {
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = '#ddd';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
         function drawSnake() {
-            ctx.fillStyle = '#00FF00';
-            snake.forEach(segment => {
-                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Голова - треугольник
+                    ctx.fillStyle = '#008000';
+                    const centerX = segment.x * gridSize + gridSize / 2;
+                    const centerY = segment.y * gridSize + gridSize / 2;
+                    ctx.beginPath();
+                    if (dx === 1 && dy === 0) { // вправо
+                        ctx.moveTo(centerX + gridSize/3, centerY - gridSize/3);
+                        ctx.lineTo(centerX + gridSize/3, centerY + gridSize/3);
+                        ctx.lineTo(centerX - gridSize/3, centerY);
+                    } else if (dx === -1 && dy === 0) { // влево
+                        ctx.moveTo(centerX - gridSize/3, centerY - gridSize/3);
+                        ctx.lineTo(centerX - gridSize/3, centerY + gridSize/3);
+                        ctx.lineTo(centerX + gridSize/3, centerY);
+                    } else if (dx === 0 && dy === -1) { // вверх
+                        ctx.moveTo(centerX - gridSize/3, centerY - gridSize/3);
+                        ctx.lineTo(centerX + gridSize/3, centerY - gridSize/3);
+                        ctx.lineTo(centerX, centerY + gridSize/3);
+                    } else if (dx === 0 && dy === 1) { // вниз
+                        ctx.moveTo(centerX - gridSize/3, centerY + gridSize/3);
+                        ctx.lineTo(centerX + gridSize/3, centerY + gridSize/3);
+                        ctx.lineTo(centerX, centerY - gridSize/3);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Тело - квадрат
+                    ctx.fillStyle = '#90EE90';
+                    ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                }
             });
         }
 
         function drawFood() {
             ctx.fillStyle = '#FF0000';
-            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 1, gridSize - 1);
+            const centerX = food.x * gridSize + gridSize / 2;
+            const centerY = food.y * gridSize + gridSize / 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, gridSize / 3, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         function changeDirection(e) {
@@ -169,22 +208,17 @@
             const goingLeft = dx === -1;
             const goingRight = dx === 1;
 
-            if (keyPressed === LEFT_KEY && !goingRight) {
-                dx = -1;
-                dy = 0;
-            }
-            if (keyPressed === UP_KEY && !goingDown) {
-                dx = 0;
-                dy = -1;
-            }
-            if (keyPressed === RIGHT_KEY && !goingLeft) {
-                dx = 1;
-                dy = 0;
-            }
-            if (keyPressed === DOWN_KEY && !goingUp) {
-                dx = 0;
-                dy = 1;
-            }
+            // Стрелки
+            if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; }
+            if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; }
+            if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; }
+            if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; }
+
+            // WASD
+            if (e.key.toLowerCase() === 'a' && !goingRight) { dx = -1; dy = 0; }
+            if (e.key.toLowerCase() === 'w' && !goingDown) { dx = 0; dy = -1; }
+            if (e.key.toLowerCase() === 'd' && !goingLeft) { dx = 1; dy = 0; }
+            if (e.key.toLowerCase() === 's' && !goingUp) { dx = 0; dy = 1; }
         }
 
         function handleResize() {
